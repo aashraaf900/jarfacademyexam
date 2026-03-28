@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Live Exam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333; }
+        .navbar { background: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .navbar h2 { margin: 0; font-size: 22px; }
+        .logout-btn { background: #e74c3c; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; transition: 0.3s; }
+        .logout-btn:hover { background: #c0392b; }
+        
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .card-title { margin-top: 0; color: #2980b9; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; font-family: 'Hind Siliguri', sans-serif; box-sizing: border-box; }
+        .form-group input:focus { border-color: #2980b9; outline: none; }
+        
+        /* Grid for options */
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .btn-add { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; margin-top: 10px;}
+        .btn-add:hover { background: #219150; }
+        
+        /* Question List */
+        .q-item { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2980b9; position: relative; }
+        .q-text { font-weight: 600; font-size: 18px; margin-top: 0; color: #2c3e50; }
+        .q-opts { color: #555; margin-bottom: 10px; }
+        .q-ans { color: #27ae60; font-weight: bold; }
+        .btn-delete { position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 14px; transition: 0.3s; }
+        .btn-delete:hover { background: #c0392b; }
+        
+        .alert { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; border: 1px solid #c3e6cb;}
+
+        /* Table Styles for Users */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #2980b9; color: white; padding: 12px; border: 1px solid #ddd; text-align: left; }
+        td { padding: 10px; border: 1px solid #eee; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>⚙️ অ্যাডমিন কন্ট্রোল প্যানেল</h2>
+        <a href="/logout" class="logout-btn">লগআউট</a>
+    </div>
+
+    <div class="container">
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}<div class="alert">✅ {{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h3 class="card-title">নতুন প্রশ্ন যোগ করুন</h3>
+            <form method="POST">
+                <div class="form-group">
+                    <input type="text" name="text" placeholder="এখানে প্রশ্নটি লিখুন..." required>
+                </div>
+                
+                <div class="options-grid">
+                    <div class="form-group"><input type="text" name="opt_a" placeholder="অপশন ক" required></div>
+                    <div class="form-group"><input type="text" name="opt_b" placeholder="অপশন খ" required></div>
+                    <div class="form-group"><input type="text" name="opt_c" placeholder="অপশন গ" required></div>
+                    <div class="form-group"><input type="text" name="opt_d" placeholder="অপশন ঘ" required></div>
+                </div>
+                
+                <div class="form-group">
+                    <input type="text" name="ans" placeholder="সঠিক উত্তরটি হুবহু লিখুন (যেমন: অপশন ক-এর লেখাটি)" style="border-color: #27ae60;" required>
+                </div>
+                <button type="submit" class="btn-add">প্রশ্ন সেভ করুন</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">নিবন্ধিত শিক্ষার্থীবৃন্দ ({{ users|length }} জন)</h3>
+            
+            {% if users|length == 0 %}
+                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো শিক্ষার্থী যুক্ত হয়নি।</p>
+            {% else %}
+                <table>
+                    <tr>
+                        <th style="text-align: center; width: 50px;">ID</th>
+                        <th>শিক্ষার্থীর নাম</th>
+                        <th>ইমেইল অ্যাড্রেস</th>
+                    </tr>
+                    {% for u in users %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">{{ u.id }}</td>
+                        <td>{{ u.name }}</td>
+                        <td style="color: #555;">{{ u.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">বর্তমান প্রশ্নসমূহ ({{ questions|length }} টি)</h3>
+            
+            {% if questions|length == 0 %}
+                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো প্রশ্ন যোগ করা হয়নি।</p>
+            {% else %}
+                {% for q in questions %}
+                <div class="q-item">
+                    <p class="q-text">{{ loop.index }}. {{ q.text }}</p>
+                    <div class="q-opts">
+                        (ক) {{ q.opt_a }} &nbsp;&nbsp; (খ) {{ q.opt_b }} <br>
+                        (গ) {{ q.opt_c }} &nbsp;&nbsp; (ঘ) {{ q.opt_d }}
+                    </div>
+                    <div class="q-ans">✔ সঠিক উত্তর: {{ q.ans }}</div>
+                    <a href="/delete_q/{{ q.id }}" class="btn-delete" onclick="return confirm('আপনি কি নিশ্চিত যে প্রশ্নটি মুছে ফেলতে চান?');">মুছে ফেলুন</a>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>
