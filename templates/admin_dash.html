@@ -82,19 +82,21 @@
             <h3 class="card-title">নিবন্ধিত শিক্ষার্থীবৃন্দ ({{ users|length }} জন)</h3>
             
             {% if users|length == 0 %}
-                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো শিক্ষার্থী যুক্ত হয়নি।</p>
+                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো শিক্ষার্থী যুক্ত হয়নি।</p>
             {% else %}
                 <table>
                     <tr>
                         <th style="text-align: center; width: 50px;">ID</th>
                         <th>শিক্ষার্থীর নাম</th>
                         <th>ইমেইল অ্যাড্রেস</th>
+                        <th>পাসওয়ার্ড</th>
                     </tr>
                     {% for u in users %}
                     <tr>
                         <td style="text-align: center; font-weight: bold;">{{ u.id }}</td>
                         <td>{{ u.name }}</td>
                         <td style="color: #555;">{{ u.email }}</td>
+                        <td style="color: #e74c3c; font-family: monospace; font-weight: bold;">{{ u.password }}</td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -105,7 +107,7 @@
             <h3 class="card-title">বর্তমান প্রশ্নসমূহ ({{ questions|length }} টি)</h3>
             
             {% if questions|length == 0 %}
-                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো প্রশ্ন যোগ করা হয়নি।</p>
+                <p style="text-align: center; color: #7f8c8d;">এখনো কোনো প্রশ্ন যোগ করা হয়নি।</p>
             {% else %}
                 {% for q in questions %}
                 <div class="q-item">
