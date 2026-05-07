@@ -2,13 +2,16 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 import random
 import os
+
 app = Flask(__name__)
 app.secret_key = 'ashraf_secret_key_123' 
-# আগের ডাটাবেস লাইনের বদলে এটি বসান
+
+# ডাটাবেস কনফিগারেশন
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///exam.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# প্রশ্নের মডেল
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(500), nullable=False)
@@ -18,11 +21,12 @@ class Question(db.Model):
     opt_d = db.Column(db.String(200), nullable=False)
     ans = db.Column(db.String(200), nullable=False)
 
-# ইউজারের ডাটাবেস টেবিল থেকে ফোন নম্বর বাদ দেওয়া হয়েছে
+# ইউজারের ডাটাবেস টেবিল (পাসওয়ার্ড যুক্ত করা হয়েছে)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -32,17 +36,29 @@ def user_login():
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
+        password = request.form['password']
         
         user = User.query.filter_by(email=email).first()
-        if not user:
-            # নতুন ইউজার হলে শুধু নাম ও ইমেইল সেভ করবে
-            user = User(name=name, email=email)
-            db.session.add(user)
+        
+        if user:
+            # ইউজার আগে থেকেই থাকলে পাসওয়ার্ড যাচাই
+            if user.password == password:
+                session['user_id'] = user.id
+                session['user_name'] = user.name
+                return redirect(url_for('user_dash'))
+            else:
+                flash('দুঃখিত, আপনার ইমেইল বা পাসওয়ার্ড ভুল হয়েছে!')
+                return redirect(url_for('user_login'))
+        else:
+            # নতুন ইউজার হলে নাম, ইমেইল এবং পাসওয়ার্ড সেভ করবে
+            new_user = User(name=name, email=email, password=password)
+            db.session.add(new_user)
             db.session.commit()
             
-        session['user_id'] = user.id
-        session['user_name'] = user.name
-        return redirect(url_for('user_dash'))
+            session['user_id'] = new_user.id
+            session['user_name'] = new_user.name
+            return redirect(url_for('user_dash'))
+            
     return render_template('index.html')
 
 @app.route('/user_dash')
@@ -76,10 +92,9 @@ def admin_login():
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dash'))
         else:
-            flash('ভুল ইউজারনেম বা পাসওয়ার্ড!')
+            flash('ভুল ইউজারনেম বা পাসওয়ার্ড!')
     return render_template('admin_login.html')
 
-@app.route('/admin_dash', methods=['GET', 'POST'])
 @app.route('/admin_dash', methods=['GET', 'POST'])
 def admin_dash():
     if not session.get('admin_logged_in'):
@@ -96,10 +111,9 @@ def admin_dash():
         new_q = Question(text=text, opt_a=opt_a, opt_b=opt_b, opt_c=opt_c, opt_d=opt_d, ans=ans)
         db.session.add(new_q)
         db.session.commit()
-        flash('Proshno shofolvabe jog kora hoyeche!')
+        flash('প্রশ্ন সফলভাবে যোগ করা হয়েছে!')
         
     questions = Question.query.all()
-    # Nicher line ti notun add kora hoyeche database theke user der data anar jonno
     users = User.query.all() 
     
     return render_template('admin_dash.html', questions=questions, users=users)
@@ -111,7 +125,7 @@ def delete_q(id):
     q = Question.query.get_or_404(id)
     db.session.delete(q)
     db.session.commit()
-    flash('প্রশ্ন মুছে ফেলা হয়েছে!')
+    flash('প্রশ্ন মুছে ফেলা হয়েছে!')
     return redirect(url_for('admin_dash'))
 
 @app.route('/logout')
